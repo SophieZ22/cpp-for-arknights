@@ -75,7 +75,17 @@ export class YituliuSurveySource implements SurveySource {
 
   public elite2(character: Character): SurveyProps | null | undefined {
     const survey = this.smap[character.key]
+
+    // 调试日志 - 检查所有key匹配问题
     if (!survey) {
+      console.log(`Missing survey data for ${character.name} (${character.key})`)
+      // 检查是否有相似的key
+      const similarKeys = Object.keys(this.smap).filter(
+        (k) => k.includes(character.key.split('_')[1]) || character.key.includes(k.split('_')[1]),
+      )
+      if (similarKeys.length > 0) {
+        console.log(`Similar keys found:`, similarKeys)
+      }
       return null
     }
 
@@ -142,6 +152,7 @@ export class YituliuSurveySource implements SurveySource {
           X: survey.modX,
           Y: survey.modY,
           D: survey.modD,
+          A: survey.modA,
         } as Record<string, ArknightsDataManager['raw']['yituliuSurvey']['result'][0]['modX']>)
       : null
     if (!modSurveys) {
@@ -175,6 +186,102 @@ export class YituliuSurveySource implements SurveySource {
         samples: this.scount * survey.own * ss.count,
       },
     ]
+  }
+
+  public modXRate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modX || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modX.count / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'X模组持有人数/精二人数',
+    }
+  }
+
+  public modYRate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modY || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modY.count / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'Y模组持有人数/精二人数',
+    }
+  }
+
+  public modDRate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modD || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modD.count / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'D模组持有人数/精二人数',
+    }
+  }
+
+  public modX3Rate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modX || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modX.rank3 / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'X模组三级人数/精二人数',
+    }
+  }
+
+  public modY3Rate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modY || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modY.rank3 / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'Y模组三级人数/精二人数',
+    }
+  }
+
+  public modD3Rate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modD || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modD.rank3 / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'D模组三级人数/精二人数',
+    }
+  }
+
+  public modARate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modA || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modA.count / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'A模组持有人数/精二人数',
+    }
+  }
+
+  public modA3Rate(character: Character): SurveyProps | null | undefined {
+    const survey = this.smap[character.key]
+    if (!survey?.modA || !survey.elite.rank2) {
+      return null
+    }
+    return {
+      percent: survey.modA.rank3 / survey.elite.rank2,
+      samples: this.scount * survey.own * survey.elite.rank2,
+      desc: 'A模组三级人数/精二人数',
+    }
   }
 
   public e2level(): SurveyProps | null | undefined {

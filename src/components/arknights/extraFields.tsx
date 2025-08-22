@@ -65,4 +65,54 @@ export const extraFields: IGameComponent['extraFields'] = {
     percentageFormatter,
     percentageStyle,
   ),
+  /* 旧版模组字段（已替换为子查询方式，保留以备后用）
+  'modxrate.yituliu': createSimpleExtraField('modxrate.yituliu', 65, percentageFormatter, percentageStyle),
+  'modyrate.yituliu': createSimpleExtraField('modyrate.yituliu', 65, percentageFormatter, percentageStyle),
+  'moddrate.yituliu': createSimpleExtraField('moddrate.yituliu', 65, percentageFormatter, percentageStyle),
+  'modxrate.heybox': createSimpleExtraField('modxrate.heybox', 65, percentageFormatter, percentageStyle),
+  'modyrate.heybox': createSimpleExtraField('modyrate.heybox', 65, percentageFormatter, percentageStyle),
+  'moddrate.heybox': createSimpleExtraField('moddrate.heybox', 65, percentageFormatter, percentageStyle),
+  'modx3rate.yituliu': createSimpleExtraField('modx3rate.yituliu', 65, percentageFormatter, percentageStyle),
+  'mody3rate.yituliu': createSimpleExtraField('mody3rate.yituliu', 65, percentageFormatter, percentageStyle),
+  'modd3rate.yituliu': createSimpleExtraField('modd3rate.yituliu', 65, percentageFormatter, percentageStyle),
+  'modx3rate.heybox': createSimpleExtraField('modx3rate.heybox', 65, percentageFormatter, percentageStyle),
+  'mody3rate.heybox': createSimpleExtraField('mody3rate.heybox', 65, percentageFormatter, percentageStyle),
+  'modd3rate.heybox': createSimpleExtraField('modd3rate.heybox', 65, percentageFormatter, percentageStyle),
+  */
+  'mod.name': createSimpleExtraField('mod.name', 120, (value) => value, {}),
+  'mod.type': {
+    width: 150,
+    C: memo(({ context }: { context: FieldContext<Arknights, Character, [number]> }) => {
+      const modIndex = context.args[0]
+      const modEquip = context.character.uniEquips[modIndex]
+      const modName = modEquip.equip.name
+      const typeName = modEquip.equip.raw.typeName2 || ''
+
+      const typeMap: Record<string, string> = {
+        X: 'X模组',
+        Y: 'Y模组',
+        D: 'D模组',
+        A: '特限模组',
+      }
+      const modTypeName = typeMap[typeName] || '未知模组'
+
+      return (
+        <CharacterListColumn width={150}>
+          <div className="bp5-fill" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div className="bp5-text-overflow-ellipsis" title={modName}>
+              {modName}
+            </div>
+            <div className="bp5-text-overflow-ellipsis" style={{ fontWeight: 'normal', opacity: 0.6 }}>
+              {modTypeName}
+            </div>
+          </div>
+        </CharacterListColumn>
+      )
+    }),
+  },
+  'mod.level': createSimpleExtraField('mod.level', 60, (value) => value, {}),
+  'mod.rate.yituliu': createSimpleExtraField('mod.rate.yituliu', 65, percentageFormatter, percentageStyle),
+  'mod.level3rate.yituliu': createSimpleExtraField('mod.level3rate.yituliu', 65, percentageFormatter, percentageStyle),
+  'mod.rate.heybox': createSimpleExtraField('mod.rate.heybox', 65, percentageFormatter, percentageStyle),
+  'mod.level3rate.heybox': createSimpleExtraField('mod.level3rate.heybox', 65, percentageFormatter, percentageStyle),
 }

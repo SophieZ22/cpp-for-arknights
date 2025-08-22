@@ -121,6 +121,76 @@ export class ArknightsAdapter implements IGameAdapter<Arknights> {
       return QNumber.parse(hss.e2level(character, 90)?.percent)
     })
 
+    // 模组持有率字段（已替换为子查询方式，保留以备后用）
+    /*
+    aa.addField('modxrate.yituliu', '一图流练度统计 X模组持有率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modXRate(character)?.percent)
+    })
+
+    aa.addField('modyrate.yituliu', '一图流练度统计 Y模组持有率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modYRate(character)?.percent)
+    })
+
+    aa.addField('moddrate.yituliu', '一图流练度统计 D模组持有率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modDRate(character)?.percent)
+    })
+
+    aa.addField('modarate.yituliu', '一图流练度统计 A模组持有率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modARate(character)?.percent)
+    })
+
+    aa.addField('modxrate.heybox', '小黑盒干员统计 X模组持有率', QNumber, () => {
+      // 先检查小黑盒是否有模组数据，如果没有则返回NaN
+      // 这里暂时返回NaN，等小黑盒API支持模组数据后再实现
+      return NaN
+    })
+
+    aa.addField('modyrate.heybox', '小黑盒干员统计 Y模组持有率', QNumber, () => {
+      return NaN
+    })
+
+    aa.addField('moddrate.heybox', '小黑盒干员统计 D模组持有率', QNumber, () => {
+      return NaN
+    })
+
+    aa.addField('modarate.heybox', '小黑盒干员统计 A模组持有率', QNumber, () => {
+      return NaN
+    })
+
+    // 模组三级率字段（已替换为子查询方式，保留以备后用）
+    aa.addField('modx3rate.yituliu', '一图流练度统计 X模组三级率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modX3Rate(character)?.percent)
+    })
+
+    aa.addField('mody3rate.yituliu', '一图流练度统计 Y模组三级率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modY3Rate(character)?.percent)
+    })
+
+    aa.addField('modd3rate.yituliu', '一图流练度统计 D模组三级率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modD3Rate(character)?.percent)
+    })
+
+    aa.addField('moda3rate.yituliu', '一图流练度统计 A模组三级率', QNumber, ({ character }) => {
+      return QNumber.parse(yss.modA3Rate(character)?.percent)
+    })
+
+    aa.addField('modx3rate.heybox', '小黑盒干员统计 X模组三级率', QNumber, () => {
+      return NaN
+    })
+
+    aa.addField('mody3rate.heybox', '小黑盒干员统计 Y模组三级率', QNumber, () => {
+      return NaN
+    })
+
+    aa.addField('modd3rate.heybox', '小黑盒干员统计 D模组三级率', QNumber, () => {
+      return NaN
+    })
+
+    aa.addField('moda3rate.heybox', '小黑盒干员统计 A模组三级率', QNumber, () => {
+      return NaN
+    })
+    */
+
     aa.createSubQuery(
       'skill',
       '技能',
@@ -155,6 +225,57 @@ export class ArknightsAdapter implements IGameAdapter<Arknights> {
         )
         if (s?.[0]?.percent == null || s?.[3]?.percent == null) return NaN
         return s?.[0]?.percent * s?.[3]?.percent
+      })
+    })
+
+    aa.createSubQuery(
+      'mod',
+      '模组',
+      (character) => {
+        return character.uniEquips
+          .map((_, index) => [index] as const)
+          .filter(([index]) => {
+            const typeName = character.uniEquips[index].equip.raw.typeName2
+            return typeName === 'X' || typeName === 'Y' || typeName === 'D' || typeName === 'A'
+          })
+      },
+      (index) => `${index}`,
+    ).tap((sq) => {
+      sq.addField('name', '模组名', QString, ({ character, args: [index] }) => character.uniEquips[index].equip.name)
+      sq.addField('type', '模组类型', QString, ({ character, args: [index] }) => {
+        const typeName = character.uniEquips[index].equip.raw.typeName2 || ''
+        const typeMap: Record<string, string> = {
+          X: 'X模组',
+          Y: 'Y模组',
+          D: 'D模组',
+          A: '特限模组',
+        }
+        return typeMap[typeName] || '未知模组'
+      })
+
+      sq.addStatusField('level', '模组等级', QNumber, ({ character, status, args: [index] }) => {
+        return status.modLevel[character.uniEquips[index].equipId] ?? 0
+      })
+
+      sq.addField('rate.yituliu', '一图流练度统计 模组持有率', QNumber, ({ character, args: [index] }) => {
+        const modData = yss.mod(character, character.uniEquips[index].equip, character.uniEquips[index].rawCharId)
+        const percent = modData?.[0]?.percent
+        return percent != null ? QNumber.parse(percent) : NaN
+      })
+
+      sq.addField('level3rate.yituliu', '一图流练度统计 模组三级率', QNumber, ({ character, args: [index] }) => {
+        const modData = yss.mod(character, character.uniEquips[index].equip, character.uniEquips[index].rawCharId)
+        // 使用mod方法返回的第4个元素，即模组三级率数据
+        const percent = modData?.[3]?.percent
+        return percent != null ? QNumber.parse(percent) : NaN
+      })
+
+      sq.addField('rate.heybox', '小黑盒干员统计 模组持有率', QNumber, () => {
+        return NaN
+      })
+
+      sq.addField('level3rate.heybox', '小黑盒干员统计 模组三级率', QNumber, () => {
+        return NaN
       })
     })
   })
@@ -242,6 +363,68 @@ export class ArknightsAdapter implements IGameAdapter<Arknights> {
           join: 'skill',
           where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
           order: [['skill.mastery3rate.heybox', 'DESC']],
+        },
+      },
+      'mod.rate.yituliu': {
+        name: '一图流练度统计 模组持有率',
+        query: {
+          select: ['mod.type', 'mod.rate.yituliu'],
+          join: 'mod',
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'mod.level', op: '<', operand: 1 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['mod.rate.yituliu', 'DESC']],
+        },
+      },
+      'mod.rate.all.yituliu': {
+        name: '一图流练度统计 模组持有率（全部）',
+        query: {
+          select: ['mod.type', 'mod.rate.yituliu'],
+          join: 'mod',
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['mod.rate.yituliu', 'DESC']],
+        },
+      },
+      'mod.level3rate.yituliu': {
+        name: '一图流练度统计 模组三级率',
+        query: {
+          select: ['mod.type', 'mod.level3rate.yituliu'],
+          join: 'mod',
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'mod.level', op: '<', operand: 3 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['mod.level3rate.yituliu', 'DESC']],
+        },
+      },
+      'mod.level3rate.all.yituliu': {
+        name: '一图流练度统计 模组三级率（全部）',
+        query: {
+          select: ['mod.type', 'mod.level3rate.yituliu'],
+          join: 'mod',
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['mod.level3rate.yituliu', 'DESC']],
         },
       },
       'elite2rate.yituliu': {
@@ -332,6 +515,182 @@ export class ArknightsAdapter implements IGameAdapter<Arknights> {
           order: [['elite2level90rate.heybox', 'DESC']],
         },
       },
+      /* 旧版模组持有率和三级率查询（已替换为子查询方式，保留以备后用）
+      'modxrate.yituliu': {
+        name: '一图流练度统计 X模组持有率',
+        query: {
+          select: ['modxrate.yituliu'],
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'elite', op: '<', operand: 2 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['modxrate.yituliu', 'DESC']],
+        },
+      },
+      'modxrate.all.yituliu': {
+        name: '一图流练度统计 X模组持有率（全部）',
+        query: {
+          select: ['modxrate.yituliu'],
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['modxrate.yituliu', 'DESC']],
+        },
+      },
+      'modyrate.yituliu': {
+        name: '一图流练度统计 Y模组持有率',
+        query: {
+          select: ['modyrate.yituliu'],
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'elite', op: '<', operand: 2 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['modyrate.yituliu', 'DESC']],
+        },
+      },
+      'modyrate.all.yituliu': {
+        name: '一图流练度统计 Y模组持有率（全部）',
+        query: {
+          select: ['modyrate.yituliu'],
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['modyrate.yituliu', 'DESC']],
+        },
+      },
+      'moddrate.yituliu': {
+        name: '一图流练度统计 D模组持有率',
+        query: {
+          select: ['moddrate.yituliu'],
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'elite', op: '<', operand: 2 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['moddrate.yituliu', 'DESC']],
+        },
+      },
+      'moddrate.all.yituliu': {
+        name: '一图流练度统计 D模组持有率（全部）',
+        query: {
+          select: ['moddrate.yituliu'],
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['moddrate.yituliu', 'DESC']],
+        },
+      },
+      'modx3rate.yituliu': {
+        name: '一图流练度统计 X模组三级率',
+        query: {
+          select: ['modx3rate.yituliu'],
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'elite', op: '<', operand: 2 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['modx3rate.yituliu', 'DESC']],
+        },
+      },
+      'modx3rate.all.yituliu': {
+        name: '一图流练度统计 X模组三级率（全部）',
+        query: {
+          select: ['modx3rate.yituliu'],
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['modx3rate.yituliu', 'DESC']],
+        },
+      },
+      'mody3rate.yituliu': {
+        name: '一图流练度统计 Y模组三级率',
+        query: {
+          select: ['mody3rate.yituliu'],
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'elite', op: '<', operand: 2 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['mody3rate.yituliu', 'DESC']],
+        },
+      },
+      'mody3rate.all.yituliu': {
+        name: '一图流练度统计 Y模组三级率（全部）',
+        query: {
+          select: ['mody3rate.yituliu'],
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['mody3rate.yituliu', 'DESC']],
+        },
+      },
+      'modd3rate.yituliu': {
+        name: '一图流练度统计 D模组三级率',
+        query: {
+          select: ['modd3rate.yituliu'],
+          where: {
+            _: '&&',
+            operand: [
+              {
+                _: '||',
+                operand: [
+                  { _: 'field', field: 'own', op: '==', operand: true },
+                  { _: 'field', field: 'goal', op: '==', operand: true },
+                ],
+              },
+              { _: 'field', field: 'elite', op: '<', operand: 2 },
+              { _: 'field', field: 'rarity', op: '==', operand: 6 },
+            ],
+          },
+          order: [['modd3rate.yituliu', 'DESC']],
+        },
+      },
+      'modd3rate.all.yituliu': {
+        name: '一图流练度统计 D模组三级率（全部）',
+        query: {
+          select: ['modd3rate.yituliu'],
+          where: { _: 'field', field: 'rarity', op: '==', operand: 6 },
+          order: [['modd3rate.yituliu', 'DESC']],
+        },
+      },
+      */
     }
   }
 
